@@ -1,0 +1,10 @@
+{
+    "name": "AutoReboot",
+    "main": "main.js",
+    "ignore": [
+        "build"
+    ],
+    "packageName": "cn.suroy.autoreboot",
+    "versionName": "1.0.0",
+    "versionCode": 1
+}
