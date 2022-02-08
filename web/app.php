@@ -52,8 +52,10 @@ switch ($mod) {
         if(is_file($fname))
         {
             $info = file_get_contents($fname);
-            // {"action":0,"description":"restart","remarks":"Action: 0-close; 1-rebootNow; 2-shutdown","source":"https://suroy.cn/logo.png","time":"2022-01-31 04:05:14"}
-            exit('{"code":0, "data": '.$info.'}');
+            // {“config”:0,"action":0,"description":"restart","remarks":"Action: 0-close; 1-rebootNow; 2-shutdown","source":"https://suroy.cn/logo.png","time":"2022-01-31 04:05:14"}
+            $info_db = json_decode($info, true);
+            $info_db["config"] = defWeekCfg(); // 重定义维持原重启时间设置
+            exit('{"code":0, "data": '.json_encode($info_db).'}');
         }
         exit('{"code":1, "msg": "Wait for Suroy\'s adding a settings."}');
         break;
@@ -84,6 +86,21 @@ function real_ip()
         $ip = $_SERVER['HTTP_X_REAL_IP'];
     }
     return $ip;
+}
+
+/**
+ * 定义维持默认原设置时间
+ * @note 于重定义维持原重启时间设置
+ * @return bool
+ */
+function defWeekCfg($sw=1)
+{
+    $arr = array(0); // 重启时间 0-6 => Sun - Sat
+    $weekday = date('w');
+    if(in_array($weekday, $arr) && $sw)
+        return 1;
+    else
+        return 0;
 }
 
 ?>

@@ -42,7 +42,7 @@ AutoBoot
 ## START
 1. 部署 API 到远程服务器
 2. 不支持 HTTPS 时，可以通过部署路由中转
-3. 下载Release 或者autojs编译打包app
+3. 下载 [Release](https://github.com/zsuroy/autoboot/releases) 或者autojs编译打包app
 4. 给予 APP 相关权限  
     + 无障碍服务权限
     + 后台运行权限
@@ -51,7 +51,7 @@ AutoBoot
     + 通过shell开机唤醒APP/或转为系统APP  
 
 
-## V1.1.0 ｜ 2021.1.31
+## V1.1.0 ｜ 2022.1.31
 1. 完成APP开发调试
 2. 完成远程API接口开发调试
 3. 待完成  
@@ -60,3 +60,9 @@ AutoBoot
 1. 定时在3.20重启手机
 2. 定时Ping-Pong心跳检测
 3. 接收远程脚本任务(可以实现一系列自动化操作进行扩展)
+
+## V1.2.0 | 2022.2.8
+1. 优化APP提示信息  
+2. 更新接收远程委派重启时间（APP/WEB）  
+    + 优先采纳接收到远程数据控制重启  
+    + 本地时间周五允许重启 

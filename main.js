@@ -2,10 +2,10 @@
  * Android 重启小助手
  * @author Suroy
  * @date 2022.1.30
+ * @lastedit 2022.2.8
  * @url https://suroy.cn
  * @other
  * shell: am start -p org.autojs.autojs # 启动autojs(root)
- * 
  * 
  */
 
@@ -48,15 +48,19 @@ function setup(opt)
     device.wakeUp();
     toast('Hello, This is Suroy!');
     console.log(device.model, device.getBattery()+"%");
-    console.info(opt);
+    // console.info(opt);
     var remTimes = 0;
     threads.start(function(){
         // new thread
         setInterval(function(){
-            console.log("Heart Detect");
+            // console.log("Heart Detect");
             var myDate = new Date();
             if(myDate.getHours() == opt["TIME_HOUR"] && myDate.getMinutes() == opt["TIME_MIN"]){
-                power("re", opt["CLICK_METHOD"]); // restart
+                var configs = defConfig(opt["IMEI"], opt["PHONE"]);
+                if(configs==1 || (configs == 2 && myDate.getDay() == 5) )
+                    power("re", opt["CLICK_METHOD"]); // restart
+                else
+                    console.info("Reboot: sleep");
             }
             // heart
             ping(opt["IMEI"], opt["PHONE"], opt["BAT"]);
@@ -128,7 +132,7 @@ function clickMapTxt(txt, types)
  */
 function ping(id, dev, bat){
     if(DEBUG_SUROY) console.show();
-    var host = DEBUG_SUROY ? "http://192.168.123.41/debug/autoboot/" : "http://dev.suroy.cn/";
+    var host = DEBUG_SUROY ? "http://192.168.123.41/debug/autoboot/" : "http://suroy.cn/";
     var api = host + "app.php?mod=ping&id=" + id + "&dev=" + dev + "&bat=" + bat;
     api = encodeURI(api);
     try {
@@ -152,7 +156,7 @@ function ping(id, dev, bat){
  * @param {string} dev 
  */
 function remote(id, dev){
-    var host = DEBUG_SUROY ? "http://192.168.123.41/debug/autoboot/" : "http://dev.suroy.cn/";
+    var host = DEBUG_SUROY ? "http://192.168.123.41/debug/autoboot/" : "http://suroy.cn/";
     var api = host + "app.php?mod=remote&id=" + id;
     
     try {
@@ -218,4 +222,44 @@ function getRes(url){
     } catch (e) {
         console.error(e)
     }    
+}
+
+
+/**
+ * 默认重启时间设置监测
+ * @param {int} id 
+ * @param {string} dev 
+ * @returns {int} 0,关；1，开；2，开；
+ */
+function defConfig(id, dev){
+    var host = DEBUG_SUROY ? "http://192.168.123.41/debug/autoboot/" : "http://suroy.cn/";
+    var api = host + "app.php?mod=remote&id=" + id;
+    
+    try {
+        var r = http.get(api, {
+            headers: {
+                'Accept-Language': 'zh-cn,zh;q=0.5',
+                'User-Agent': 'Mozilla/5.0 (Linux; U; Android; zh-CN; ' + dev + ' Build/PKQ1.190616.001) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/78.0.3904.108 AutoBoot/13.7.4.1155 Mobile Safari/537.36            '
+            }
+        });
+        var cmd = r.body.json();
+        if(cmd.code == 0)
+        {
+            
+            if(cmd.data.config)
+            {
+                console.warn("config: default");
+                return 1; // 维持默认设置
+            }
+        }
+        else{
+            toastLog(cmd.msg);
+        }
+        // log("remote: " + JSON.stringify(cmd));
+    } catch (e) {
+        // 捕捉所有异常
+        console.error(e);
+        return 2; // 网络错误，维持本地设置
+    }
+    return 0;
 }

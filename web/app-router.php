@@ -17,7 +17,7 @@ switch ($mod) {
         $name = @$_GET['name'];
         $id = isset($_GET['id']) ? @$_GET['id'] : 1;
         $fname = './data/'.$name.'-'.$id.'.yml';
-        $url = 'http://127.0.0.1/addon/airport/app.php?mod=get&name='.$name.'&id='.$id;
+        $url = 'http://127.0.0.1/app.php?mod=get&name='.$name.'&id='.$id;
         $info = getSSLPage($url);
         exit($info);
         break;
@@ -26,13 +26,13 @@ switch ($mod) {
         $dev = isset($_GET['dev']) ? urldecode(@$_GET['dev']) : 'Android'; // 名字
         $bat = isset($_GET['bat']) ? @$_GET['bat'] : 0; // 电量
         $dev = str_replace(' ', '', $dev); // 空格报错
-        $url = 'http://127.0.0.1/addon/autoboot/app.php?mod=ping&addr='.$_SERVER['REMOTE_ADDR'].'&dev='.$dev.'&id='.$id.'&bat='.$bat;
+        $url = 'http://127.0.0.1/app.php?mod=ping&addr='.$_SERVER['REMOTE_ADDR'].'&dev='.$dev.'&id='.$id.'&bat='.$bat;
         $info = getSSLPage($url);
         exit($info);
 		break;
 	case 'remote': // Autoboot | remote
         $id = isset($_GET['id']) ? @$_GET['id'] : 1;
-        $url = 'http://127.0.0.1/addon/autoboot/app.php?mod=remote&id='.$id;
+        $url = 'http://127.0.0.1/app.php?mod=remote&id='.$id;
         $info = getSSLPage($url);
         exit($info);
 		break;
