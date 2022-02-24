@@ -3,6 +3,7 @@
  * 安卓重启工具API
  * @author @Suroy
  * @date 22.01.31
+ * @lastdate 22.02.24
  */
 error_reporting(0);
 $mod = isset($_GET['mod']) ? $_GET['mod'] : null;
@@ -54,7 +55,7 @@ switch ($mod) {
             $info = file_get_contents($fname);
             // {“config”:0,"action":0,"description":"restart","remarks":"Action: 0-close; 1-rebootNow; 2-shutdown","source":"https://suroy.cn/logo.png","time":"2022-01-31 04:05:14"}
             $info_db = json_decode($info, true);
-            $info_db["config"] = defWeekCfg(); // 重定义维持原重启时间设置
+            $info_db["config"] = isset($info_db["config"]) ? defWeekCfg($info_db["config"]) : defWeekCfg(null); // 字段重定义为了判断是否维持原重启时间设置
             exit('{"code":0, "data": '.json_encode($info_db).'}');
         }
         exit('{"code":1, "msg": "Wait for Suroy\'s adding a settings."}');
@@ -91,11 +92,14 @@ function real_ip()
 /**
  * 定义维持默认原设置时间
  * @note 于重定义维持原重启时间设置
- * @return bool
+ * @param string $cfg 配置文本（有效时启用配置，无效则默认）
+ * @return bool 0,关(即不重启)；1，开
  */
-function defWeekCfg($sw=1)
+function defWeekCfg($cfg, $sw=1)
 {
-    $arr = array(0); // 重启时间 0-6 => Sun - Sat
+    $arr_demo = array(0); // 模版重启时间 0-6 => Sun - Sat
+    // 配置文件设置的时间 （有效：0|1|2 .... 6） （额外：7，永不重启）
+    $arr = strlen($cfg) ? explode('|', $cfg) : $arr_demo;
     $weekday = date('w');
     if(in_array($weekday, $arr) && $sw)
         return 1;

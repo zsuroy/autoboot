@@ -230,7 +230,7 @@
   * 默认重启时间设置监测
   * @param {int} id 
   * @param {string} dev 
-  * @returns {int} 0,关；1，开；2，开；
+  * @returns {int} 0,关；1，开；2，开(默认APP周五)；
   */
  function defConfig(id, dev){
      var host = DEBUG_SUROY ? "http://192.168.123.41/debug/autoboot/" : "https://suroy.cn/";

@@ -1,5 +1,5 @@
 {
-    "config":1, // 维持原重启时间设置
+    "config":"1|5|0", // 维持原重启时间设置 (周一、周五、周日重启 ｜ 单7 为永不重启)
     "action":3, // 远程命令行为
     "description":"reboot", // 描述
     "source":"http://dev.suroy.cn/open/remote.js", // 远程脚本地址
