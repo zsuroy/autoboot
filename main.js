@@ -2,7 +2,7 @@
  * Android 重启小助手
  * @author Suroy
  * @date 2022.1.30
- * @lastedit 2022.2.13
+ * @lastedit 2022.7.13
  * @url https://suroy.cn
  * @other
  * shell: am start -p org.autojs.autojs # 启动autojs(root)
@@ -10,22 +10,23 @@
  */
 
  "auto";  // 自动打开无障碍服务
-
-
+ bootloader(); //开机自启动
+    
  const WIDTH = Math.min(device.width, device.height);
  const HEIGHT = Math.max(device.width, device.height);
  const DEBUG_SUROY = false; // 开发调试模式
- 
+ var myServer = require('server.js'); //导入服务器模块
+ var times_running = 0; //记录脚本运行状态
+
  // config
  const OPTS = {
      "CLICK_METHOD": device.sdkInt < 24 ? 1 : 0, // 点击方式（Android7.0+: 0, 7.0-: 1）
      "TIME_HOUR": 3, // 定时
      "TIME_MIN": 25,
      "PHONE": device.model,
-     "IMEI": device.getIMEI() ? device.getIMEI() : device.getAndroidId(), // 解决Android10的获取不到Imei问题
+     "IMEI": device.release < 10 ? device.getIMEI() : device.getAndroidId(), // 解决Android10的获取不到Imei问题
      "BAT": device.getBattery()
  }
- 
 
  if(!OPTS["CLICK_METHOD"] && device.sdkInt < 24)
  { // 重定义点击方法适配低于Android7方使用
@@ -35,9 +36,23 @@
      };
  }
  
- 
- setup(OPTS); // start
- // exit();
+
+ // 按键屏蔽 ｜ 防止意外重载
+events.setKeyInterceptionEnabled("back", true);
+events.observeKey();
+events.onKeyDown("back", function(event){ //返回键
+    log("[key_down]: back");
+});
+
+
+
+ loadAssist(); //自动启动辅助功能
+ if(!checkRunState())
+ {
+    myServer.run(true); //todo("publishing delete")
+    setup(OPTS); // start
+    // exit();
+ }
  
  
  /**
@@ -71,12 +86,51 @@
                  remote(opt["IMEI"], opt["PHONE"]);
                  remTimes = 0;
              }
-         }, 25000);
+         }, 1000); //todo("25000")
      });
  
  }
  
+ /**
+  * 重复运行监测（有bug）
+  * 重复运行则返回true
+  * @returns bool
+  */
+ function checkRunState() {
+    my_path = engines.myEngine().getSource();
+    engines.all().forEach(e => {
+        path = e.getSource();
+        if(path == my_path) times_running++; //递增重复运行标志
+    });
+    console.info("[running]: ", times_running);
+    if(times_running > 1) return true;
+    else return false;
+ }
+
+ /**
+  * 无Root通过ADB永久自动开起无障碍
+  * @returns 
+  */
+ function loadAssist() {
+    importClass(android.content.Context);
+    importClass(android.provider.Settings);
+    try {
+        var enabledServices = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        log('当前已启用的辅助服务\n', enabledServices);
+        //应用包名cn.suroy.autoboot
+        var Services = enabledServices + ":cn.suroy.autoboot/com.stardust.autojs.core.accessibility.AccessibilityService";
+        Settings.Secure.putString(context.getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, Services);
+        Settings.Secure.putString(context.getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED, '1');
+        toastLog("成功开启Autoboot的辅助服务");
+    } catch (error) {
+        //授权方法：开启usb调试并使用adb工具连接手机，执行 adb shell pm grant org.autojs.autojspro android.permission.WRITE_SECURE_SETTING
+        toastLog("\n请确保已给予 WRITE_SECURE_SETTINGS 权限\n\n授权代码已复制，请使用adb工具连接手机执行(重启不失效)\n\n", error);
+        setClip("adb shell pm grant org.autojs.autojspro android.permission.WRITE_SECURE_SETTINGS");
+    }
+    return true;
+ }
  
+
  /**
  *
  * power
@@ -133,7 +187,7 @@
   */
  function ping(id, dev, bat){
      if(DEBUG_SUROY) console.show();
-     var host = DEBUG_SUROY ? "http://192.168.123.41/debug/autoboot/" : "https://suroy.cn/";
+     var host = getApi(DEBUG_SUROY); //改为自己的接口地址
      var api = host + "app.php?mod=ping&id=" + id + "&dev=" + dev + "&bat=" + bat;
      api = encodeURI(api);
      try {
@@ -157,7 +211,7 @@
   * @param {string} dev 
   */
  function remote(id, dev){
-     var host = DEBUG_SUROY ? "http://192.168.123.41/debug/autoboot/" : "https://suroy.cn/";
+     var host = getApi(DEBUG_SUROY);
      var api = host + "app.php?mod=remote&id=" + id;
      
      try {
@@ -168,7 +222,7 @@
              }
          });
          var cmd = r.body.json();
-         if(cmd.code == 0)
+         if(cmd.code == 0) 
          {
              switch(cmd.data.action)
              {
@@ -181,6 +235,17 @@
                  case 3:
                      getRes(cmd.data.source);
                      break;
+                 case 4: //唤醒进程
+                     try {
+                        appName = cmd.data.appname;
+                     } catch (error) {
+                        appName = "com.termux";
+                     }
+                     wakeApp(appName);
+                     break;
+                 case 5: //启动服务器
+                    myServer.run(true);
+                    break;
                  case 0:
                      console.info("remote command from Suroy.cn");
                      break;
@@ -233,7 +298,7 @@
   * @returns {int} 0,关；1，开；2，开(默认APP周五)；
   */
  function defConfig(id, dev){
-     var host = DEBUG_SUROY ? "http://192.168.123.41/debug/autoboot/" : "https://suroy.cn/";
+     var host = getApi(DEBUG_SUROY);
      var api = host + "app.php?mod=remote&id=" + id;
      
      try {
@@ -260,8 +325,65 @@
      } catch (e) {
          // 捕捉所有异常
          console.error(e);
+
          return 2; // 网络错误，维持本地设置
      }
      return 0;
  }
+
+
+ /**
+  * API接口定义
+  * @param {bool} mode
+  * @note 通常模式True为调试模式
+  * @return string
+  */
+ function getApi(mode){
+    const api=[
+        'http://192.168.123.41/debug/autoboot/',
+        'https://suroy.cn/'
+    ];
+    return mode ? api[0] : api[1];
+ }
  
+ /**
+  * 监听APP启动
+  * @param {string} appName
+  * @return {bool} 
+  */
+ function wakeApp(appName){
+    if(!launch(appName))
+    {
+        if(launchApp(appName)) return true; 
+    }
+    return false;
+ }
+
+
+ /**
+  * 定时轮训任务
+  * @param {string} fpath 文件路径
+  * @param {int} hour 
+  * @param {int} min
+  */
+ function loopTasker(fpath, hou, min)
+ {
+    console.log($timers.addDailyTask({
+        path: fpath,
+        time: new Date(0, 0, 0, hou, min, 0),
+        delay: 0,
+        loopTimes: 1,
+        interval: 0,
+    }));
+ }
+
+ /**
+  * 设置开机自启
+  */
+function bootloader(){
+    timers.addIntentTask({
+        path: 'main.js',
+        action: 'android.intent.action.BOOT_COMPLETED'
+    });
+    return true;
+}

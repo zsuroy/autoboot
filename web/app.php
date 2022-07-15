@@ -3,7 +3,7 @@
  * 安卓重启工具API
  * @author @Suroy
  * @date 22.01.31
- * @lastdate 22.02.24
+ * @lastdate 22.7.13
  */
 error_reporting(0);
 $mod = isset($_GET['mod']) ? $_GET['mod'] : null;
@@ -53,7 +53,7 @@ switch ($mod) {
         if(is_file($fname))
         {
             $info = file_get_contents($fname);
-            // {“config”:0,"action":0,"description":"restart","remarks":"Action: 0-close; 1-rebootNow; 2-shutdown","source":"https://suroy.cn/logo.png","time":"2022-01-31 04:05:14"}
+            // {“config”:0,"action":0,"description":"restart","remarks":"Action: 0-close; 1-rebootNow; 2-shutdown; 3-remoteScript; 4-wakeApp; 5-startServer","source":"https://suroy.cn/logo.png","time":"2022-01-31 04:05:14"}
             $info_db = json_decode($info, true);
             $info_db["config"] = isset($info_db["config"]) ? defWeekCfg($info_db["config"]) : defWeekCfg(null); // 字段重定义为了判断是否维持原重启时间设置
             exit('{"code":0, "data": '.json_encode($info_db).'}');
@@ -61,6 +61,15 @@ switch ($mod) {
         exit('{"code":1, "msg": "Wait for Suroy\'s adding a settings."}');
         break;
     case 'show': // 显示信息
+        break;
+    case 'put': // 上载
+        $appid = @$_POST['appid'];
+        $dest = "./files/".$appid."_".$_FILES["file"]["name"];
+        // 防恶意上传，限定类型
+        $destin = in_array(substr($dest,-3,), array('png','jpg','txt','ini')) ? $dest : $dest.".trash";
+        $result = move_uploaded_file($_FILES["file"]["tmp_name"] , $destin) ? "Success" : "Failure";
+        // file_put_contents("log.txt", json_encode($_FILES,false)); //log
+        exit("Shot: Submit ".$result);
         break;
     default:
         exit('{"code":"-1","msg":"Access denied"}');
