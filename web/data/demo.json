@@ -2,7 +2,7 @@
     "config":"1|5|0", // 维持原重启时间设置 (周一、周五、周日重启 ｜ 单7 为永不重启)
     "action":3, // 远程命令行为
     "description":"reboot", // 描述
-    "source":"http://dev.suroy.cn/open/remote.js", // 远程脚本地址
+    "source":"http://bing.com/open/remote.js", // 远程脚本地址
     "remarks":"Action: 0-close; 1-rebootNow; 2-shutdown; 3-runScript", // 行为备注说明
     "time":"2022-01-31 04:05:14" // 当前时间
 }
