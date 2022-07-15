@@ -18,7 +18,7 @@ bin-release/
 .DS_Store
 */.DS_Store
 Edition/
-.vscode/*
+!.vscode/*
 
 # Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
 # should NOT be excluded as they contain compiler settings and other important
